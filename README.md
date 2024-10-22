@@ -68,3 +68,7 @@ The `exclude-addresses.py` script is a utility for excluding specific IP network
 
 - Python 3.x
 - `ipaddress` module (standard in Python 3.3+)
+
+License
+
+This script is open-source and available under the MIT license.
