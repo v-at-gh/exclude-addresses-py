@@ -1,6 +1,3 @@
-Here's a possible `README.md` content for the `exclude-addresses.py` script:
-
----
 
 # `exclude-addresses.py`
 
