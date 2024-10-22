@@ -12,24 +12,34 @@ from ipaddress import (
 
 def die(code: int, message: Optional[str] = None) -> NoReturn:
     if message:
-        if code != 0: out = sys.stderr
-        else: out = sys.stdout
+        if code != 0:
+            out = sys.stderr
+        else:
+            out = sys.stdout
         print(message, file=out)
     sys.exit(code)
 
 
 def is_string_a_valid_ip_address(item: str) -> bool:
-    try: ip_address(item); return True
-    except: return False
+    try:
+        ip_address(item)
+        return True
+    except:
+        return False
 
 
 def is_string_a_valid_ip_network(item: str, strict: bool = False) -> bool:
     if not strict:
-        try: ip_network(item); return True
-        except: return False
+        try:
+            ip_network(item)
+            return True
+        except:
+            return False
     else:
-        if is_string_a_valid_ip_network(item) and not is_string_a_valid_ip_address(item): return True
-        else: return False
+        if is_string_a_valid_ip_network(item) and not is_string_a_valid_ip_address(item):
+            return True
+        else:
+            return False
 
 
 def exclude_addresses(
@@ -82,24 +92,35 @@ def process_args(target_net: Union[str, IPv4Network, IPv6Network],
 
     if is_string_a_valid_ip_network(addrs_str):
         net_a = ip_network(addrs_str)
-        if not isinstance(net_a, type(target_net)): mis_addrs.add(net_a)
+        if not isinstance(net_a, type(target_net)):
+            mis_addrs.add(net_a)
         elif not net_a.subnet_of(target_net):
-            if net_a.supernet_of(target_net): irr_addrs.add(net_a)
-            else: irr_addrs.add(net_a)
-        else: addr_objs.add(net_a)
+            if net_a.supernet_of(target_net):
+                irr_addrs.add(net_a)
+            else:
+                irr_addrs.add(net_a)
+        else:
+            addr_objs.add(net_a)
     else:
         if ',' in addrs_str:
             addrs = set(a.strip() for a in addrs_str.split(',') if a.strip() != '')
         else:
-            if not ' ' in addrs_str: die(2, f"{addrs_str} is not a valid ip network.")
+            if not ' ' in addrs_str:
+                die(2, f"{addrs_str} is not a valid ip network.")
             addrs = set(a.strip() for a in addrs_str.split() if a.strip() != '')
+
         for a in addrs:
             if not is_string_a_valid_ip_network(a, strict=False):
                 inv_addrs.add(a); continue
-            else:  net_a = ip_network(a)
-            if not isinstance(net_a, type(target_net)): mis_addrs.add(net_a)
-            elif   not net_a.subnet_of(target_net): irr_addrs.add(a)
-            else:  addr_objs.add(net_a)
+            else:
+                net_a = ip_network(a)
+
+            if   not isinstance(net_a, type(target_net)):
+                mis_addrs.add(net_a)
+            elif not net_a.subnet_of(target_net):
+                irr_addrs.add(a)
+            else:
+                addr_objs.add(net_a)
 
     return addr_objs, inv_addrs, mis_addrs, irr_addrs
 
@@ -121,7 +142,9 @@ def print_errors_and_exit(inv_addrs, mis_addrs, irr_addrs) -> NoReturn:
 
 
 def print_result_and_exit(result_nets, separator, prefix, postfix) -> NoReturn:
-    die(0, separator.join((prefix+str(n)+postfix for n in result_nets)).strip())
+    die(0, separator.join(
+        (prefix+str(n)+postfix for n in result_nets)
+    ).strip())
 
 
 class ArgHelp:
@@ -139,9 +162,9 @@ def parse_arguments() -> Namespace:
     parser = ArgumentParser()
     parser.add_argument('network', type=str, help=ArgHelp.network)
     parser.add_argument('-a', '--addresses', type=str, metavar='NETS', help=ArgHelp.addresses)
-    parser.add_argument('-s', '--separator', type=str, metavar='SEP', help=ArgHelp.separator, default='\n')
-    parser.add_argument('-p', '--prefix',    type=str, metavar='STR', help=ArgHelp.prefix,    default='')
-    parser.add_argument('-P', '--postfix',   type=str, metavar='STR', help=ArgHelp.postfix,   default='')
+    parser.add_argument('-s', '--separator', type=str, metavar='SEP',  help=ArgHelp.separator, default='\n')
+    parser.add_argument('-p', '--prefix',    type=str, metavar='STR',  help=ArgHelp.prefix,    default='')
+    parser.add_argument('-P', '--postfix',   type=str, metavar='STR',  help=ArgHelp.postfix,   default='')
     parser.add_argument('-i', '--ignore', action='store_true', help=ArgHelp.ignore)
 
     return parser.parse_args()
@@ -150,16 +173,21 @@ def parse_arguments() -> Namespace:
 def main() -> NoReturn:
 
     args = parse_arguments()
+
     separator = args.separator
     prefix = args.prefix; postfix = args.postfix
+
     target_net, addrs_str = validate_args(args.network, args.addresses)
     addr_objs, inv_addrs, mis_addrs, irr_addrs = process_args(target_net, addrs_str)
 
     if not args.ignore and (inv_addrs or mis_addrs or irr_addrs):
         print_errors_and_exit(inv_addrs, mis_addrs, irr_addrs)
     else:
-        result_nets = sorted(list(exclude_addresses(target_net, (a for a in addr_objs))))
-        if len(result_nets) == 0: die(0, target_net)
+        result_nets = sorted(list(
+            exclude_addresses(target_net, (a for a in addr_objs))
+        ))
+        if len(result_nets) == 0:
+            die(0, target_net)
         print_result_and_exit(result_nets, separator, prefix, postfix)
 
 
