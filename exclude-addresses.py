@@ -24,7 +24,7 @@ def is_string_a_valid_ip_address(item: str) -> bool:
     try:
         ip_address(item)
         return True
-    except:
+    except ValueError:
         return False
 
 
@@ -33,10 +33,11 @@ def is_string_a_valid_ip_network(item: str, strict: bool = False) -> bool:
         try:
             ip_network(item)
             return True
-        except:
+        except ValueError:
             return False
     else:
-        if is_string_a_valid_ip_network(item) and not is_string_a_valid_ip_address(item):
+        if is_string_a_valid_ip_network(item) and not \
+           is_string_a_valid_ip_address(item):
             return True
         else:
             return False
@@ -45,7 +46,7 @@ def is_string_a_valid_ip_network(item: str, strict: bool = False) -> bool:
 def exclude_addresses(
         target_network:       Union[IPv4Network, IPv6Network],
         addresses_to_exclude: Union[List[IPv4Network], List[IPv6Network]]
-)    -> Union[Iterator[IPv4Network], Iterator[IPv6Network]]:
+) -> Union[Iterator[IPv4Network], Iterator[IPv6Network]]:
 
     addresses_to_exclude = sorted(collapse_addresses(addresses_to_exclude))
 
@@ -76,7 +77,7 @@ def validate_args(
     if not is_string_a_valid_ip_network(target_net):
         die(1, f"{target_net} is not a valid ip network.")
     elif not addrs_str:
-        die(2, f"Missing addresses argument. It must be a {ArgHelp.addresses}.")
+        die(2, f"Missing addresses argument. It must be a {ARGHELP_ADDRESSES}.")
 
     target_net = ip_network(target_net)
     addrs_str = str(addrs_str).strip()
@@ -88,7 +89,9 @@ def process_args(target_net: Union[str, IPv4Network, IPv6Network],
           addrs_str: str) -> Union[tuple[set, set, set, set], NoReturn]:
 
     addr_objs = set()
-    inv_addrs = set(); mis_addrs = set(); irr_addrs = set()
+    inv_addrs = set()
+    mis_addrs = set()
+    irr_addrs = set()
 
     if is_string_a_valid_ip_network(addrs_str):
         net_a = ip_network(addrs_str)
@@ -111,9 +114,10 @@ def process_args(target_net: Union[str, IPv4Network, IPv6Network],
 
         for a in addrs:
             if not is_string_a_valid_ip_network(a, strict=False):
-                inv_addrs.add(a); continue
-            else:
-                net_a = ip_network(a)
+                inv_addrs.add(a)
+                continue
+
+            net_a = ip_network(a)
 
             if   not isinstance(net_a, type(target_net)):
                 mis_addrs.add(net_a)
@@ -134,8 +138,9 @@ def print_errors_and_exit(inv_addrs, mis_addrs, irr_addrs) -> NoReturn:
         wrong_stuff_len = len(wrong_stuff[1])
         if wrong_stuff_len > 0:
             plural = 'es' if wrong_stuff_len > 1 else ''
+            wrong_stuff_str = ' '.join(str(item) for item in wrong_stuff[1])
             wrong_stuff_message_list.append(
-                f"{wrong_stuff[0]+plural+': '+' '.join(str(item) for item in wrong_stuff[1])}"
+                f"{wrong_stuff[0] + plural + ': ' + wrong_stuff_str}"
             )
 
     die(2, '\n'.join(wrong_stuff_message_list).strip())
@@ -147,25 +152,34 @@ def print_result_and_exit(result_nets, separator, prefix, postfix) -> NoReturn:
     ).strip())
 
 
-class ArgHelp:
-
-    network   = "The network from which we exclude addresses"
-    addresses = "comma or whitespace separated addresses of hosts and/or networks to be excluded"
-    separator = "separator for the list of resulting networks. Default is the new line"
-    prefix    = "prefix to put before each resulting network, for example `ip route add `"
-    postfix   = "postfix to be placed after each resulting network, for example ` via tun0`"
-    ignore    = "ignore non-valid input arguments (except the target network)"
+ARGHELP_NETWORK = "The network from which we exclude addresses"
+ARGHELP_ADDRESSES = "comma or whitespace separated addresses of hosts and/or networks to be excluded"
+ARGHELP_SEPARATOR = "separator for the list of resulting networks. Default is the new line"
+ARGHELP_PREFIX = "prefix to put before each resulting network, for example `ip route add `"
+ARGHELP_POSTFIX = "postfix to be placed after each resulting network, for example ` via tun0`"
+ARGHELP_IGNORE = "ignore non-valid input arguments (except the target network)"
 
 
 def parse_arguments() -> Namespace:
 
     parser = ArgumentParser()
-    parser.add_argument('network', type=str, help=ArgHelp.network)
-    parser.add_argument('-a', '--addresses', type=str, metavar='NETS', help=ArgHelp.addresses)
-    parser.add_argument('-s', '--separator', type=str, metavar='SEP',  help=ArgHelp.separator, default='\n')
-    parser.add_argument('-p', '--prefix',    type=str, metavar='STR',  help=ArgHelp.prefix,    default='')
-    parser.add_argument('-P', '--postfix',   type=str, metavar='STR',  help=ArgHelp.postfix,   default='')
-    parser.add_argument('-i', '--ignore', action='store_true', help=ArgHelp.ignore)
+    parser.add_argument('network', type=str, help=ARGHELP_NETWORK)
+    parser.add_argument(
+        '-a', '--addresses', type=str, metavar='NETS',
+        help=ARGHELP_ADDRESSES)
+
+    parser.add_argument(
+        '-s', '--separator', type=str, metavar='SEP',
+        help=ARGHELP_SEPARATOR, default='\n')
+    parser.add_argument(
+        '-p', '--prefix', type=str, metavar='STR',
+        help=ARGHELP_PREFIX,    default='')
+    parser.add_argument(
+        '-P', '--postfix', type=str, metavar='STR',
+        help=ARGHELP_POSTFIX,   default='')
+
+    parser.add_argument(
+        '-i', '--ignore', action='store_true', help=ARGHELP_IGNORE)
 
     return parser.parse_args()
 
@@ -175,7 +189,8 @@ def main() -> NoReturn:
     args = parse_arguments()
 
     separator = args.separator
-    prefix = args.prefix; postfix = args.postfix
+    prefix = args.prefix
+    postfix = args.postfix
 
     target_net, addrs_str = validate_args(args.network, args.addresses)
     addr_objs, inv_addrs, mis_addrs, irr_addrs = process_args(target_net, addrs_str)
