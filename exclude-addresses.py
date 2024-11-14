@@ -42,7 +42,7 @@ def parse_arguments() -> Namespace:
     return parser.parse_args()
 
 
-def die(code: int, message: Optional[str] = None) -> NoReturn:
+def _die(code: int, message: Optional[str] = None) -> NoReturn:
     if message:
         if code != 0:
             out = sys.stderr
@@ -52,7 +52,7 @@ def die(code: int, message: Optional[str] = None) -> NoReturn:
     sys.exit(code)
 
 
-def is_string_a_valid_ip_address(item: str) -> bool:
+def _is_string_a_valid_ip_address(item: str) -> bool:
     try:
         ip_address(item)
         return True
@@ -60,7 +60,7 @@ def is_string_a_valid_ip_address(item: str) -> bool:
         return False
 
 
-def is_string_a_valid_ip_network(item: str, strict: bool = False) -> bool:
+def _is_string_a_valid_ip_network(item: str, strict: bool = False) -> bool:
     if not strict:
         try:
             ip_network(item)
@@ -68,8 +68,8 @@ def is_string_a_valid_ip_network(item: str, strict: bool = False) -> bool:
         except ValueError:
             return False
     else:
-        return bool(is_string_a_valid_ip_network(item) and not \
-                    is_string_a_valid_ip_address(item))
+        return bool(_is_string_a_valid_ip_network(item) and not \
+                    _is_string_a_valid_ip_address(item))
 
 
 def exclude_addresses(
@@ -103,10 +103,10 @@ def validate_args(
         target_net: str, addrs_str: str
 ) -> Union[tuple[Union[IPv4Network, IPv6Network], str], NoReturn]:
 
-    if not is_string_a_valid_ip_network(target_net):
-        die(1, f"{target_net} is not a valid ip network.")
+    if not _is_string_a_valid_ip_network(target_net):
+        _die(1, f"{target_net} is not a valid ip network.")
     elif not addrs_str:
-        die(2, f"Missing addresses argument. It must be a {ARGHELP_ADDRESSES}.")
+        _die(2, f"Missing addresses argument. It must be a {ARGHELP_ADDRESSES}.")
 
     target_net = ip_network(target_net)
     addrs_str = str(addrs_str).strip()
@@ -124,7 +124,7 @@ def process_args(
     mis_addrs = set()
     irr_addrs = set()
 
-    if is_string_a_valid_ip_network(addrs_str):
+    if _is_string_a_valid_ip_network(addrs_str):
         net_a = ip_network(addrs_str)
         if not isinstance(net_a, type(target_net)):
             mis_addrs.add(net_a)
@@ -141,12 +141,12 @@ def process_args(
             addrs = set(a.strip() for a in addr_list if a.strip() != '')
         else:
             if ' ' not in addrs_str:
-                die(2, f"{addrs_str} is not a valid ip network.")
+                _die(2, f"{addrs_str} is not a valid ip network.")
             addr_list = addrs_str.split()
             addrs = set(a.strip() for a in addr_list if a.strip() != '')
 
         for a in addrs:
-            if not is_string_a_valid_ip_network(a, strict=False):
+            if not _is_string_a_valid_ip_network(a, strict=False):
                 inv_addrs.add(a)
                 continue
 
@@ -176,11 +176,11 @@ def print_errors_and_exit(inv_addrs, mis_addrs, irr_addrs) -> NoReturn:
                 f"{wrong_stuff[0] + plural + ': ' + wrong_stuff_str}"
             )
 
-    die(2, '\n'.join(wrong_stuff_message_list).strip())
+    _die(2, '\n'.join(wrong_stuff_message_list).strip())
 
 
 def print_result_and_exit(result_nets, separator, prefix, postfix) -> NoReturn:
-    die(0, separator.join(
+    _die(0, separator.join(
         (prefix+str(n)+postfix for n in result_nets)
     ).strip())
 
@@ -204,7 +204,7 @@ def main() -> NoReturn:
             exclude_addresses(target_net, (a for a in addr_objs))
         ))
         if len(result_nets) == 0:
-            die(0, target_net)
+            _die(0, target_net)
         print_result_and_exit(result_nets, separator, prefix, postfix)
 
 

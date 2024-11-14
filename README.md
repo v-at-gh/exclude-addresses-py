@@ -41,14 +41,16 @@ The `exclude-addresses.py` script is a utility for excluding specific IP network
 
 #### Exclude multiple networks
 
+Exclude Telegram networks from IPv4 address-space:
 ```bash
-./exclude-addresses.py 192.168.0.0/16 -a "192.168.1.0/24, 192.168.2.0/24"
+./exclude-addresses.py 0.0.0.0/0 -a '5.28.192.0/18 91.105.192.0/23 91.108.8.0/22 91.108.56.0/22 95.161.64.0/20 149.154.64.0/18 149.154.128.0/17'
 ```
 
 #### Custom Output Formatting
 
+Return a list of commands to set route for add subnetworks from `192.168.0.0/16` except `192.168.1.0/24`:
 ```bash
-./exclude-addresses.py 192.168.0.0/16 -a 192.168.1.0/24 -s "," -p "ip route add " -P " via tun0"
+./exclude-addresses.py 192.168.0.0/16 -a 192.168.1.0/24 -p "ip route add " -P " via tun0"
 ```
 
 ### Error Handling
@@ -68,4 +70,4 @@ The `exclude-addresses.py` script is a utility for excluding specific IP network
 
 License
 
-This script is open-source and available under the MIT license.
+This script is open-source and available under the [MIT license](./LICENSE).
