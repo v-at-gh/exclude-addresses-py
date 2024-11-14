@@ -48,7 +48,7 @@ Exclude Telegram networks from IPv4 address-space:
 
 #### Custom Output Formatting
 
-Return a list of commands to set route for add subnetworks from `192.168.0.0/16` except `192.168.1.0/24`:
+Return a list of commands to set route for all subnetworks from `192.168.0.0/16` except `192.168.1.0/24`:
 ```bash
 ./exclude-addresses.py 192.168.0.0/16 -a 192.168.1.0/24 -p "ip route add " -P " via tun0"
 ```
